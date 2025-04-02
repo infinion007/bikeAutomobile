@@ -113,6 +113,29 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
     }
   });
   
+  // Handle saving items without completing
+  const saveItemsMutation = useMutation({
+    mutationFn: async (data: BillingForm) => {
+      const response = await apiRequest("POST", "/api/billing", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Items saved successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/service-entries"] });
+      onClose();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save items",
+        variant: "destructive",
+      });
+    }
+  });
+  
   const handleCompleteBilling = () => {
     const billingData: BillingForm = {
       serviceEntryId,
@@ -124,9 +147,27 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
       paymentMethod,
       isPaid: true,
       notes: '',
+      markAsComplete: true,
     };
     
     billingMutation.mutate(billingData);
+  };
+  
+  const handleSaveItems = () => {
+    const billingData: BillingForm = {
+      serviceEntryId,
+      items,
+      subtotal: totals.subtotal,
+      taxRate: totals.taxRate,
+      taxAmount: totals.taxAmount,
+      totalAmount: totals.totalAmount,
+      paymentMethod,
+      isPaid: false, // Not marking as paid
+      notes: '',
+      markAsComplete: false, // New flag to indicate we're just saving items
+    };
+    
+    saveItemsMutation.mutate(billingData);
   };
   
   if (!isOpen) return null;
@@ -148,7 +189,7 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-4 border-b border-neutral-200 sticky top-0 bg-white">
-          <h3 className="text-lg font-bold">Generate Bill</h3>
+          <h3 className="text-lg font-bold">Manage Vehicle Services</h3>
           <button 
             onClick={onClose}
             className="text-neutral-500 hover:text-neutral-700"
@@ -324,6 +365,15 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
             >
               <span className="material-icons mr-2">close</span>
               Cancel
+            </button>
+            <button 
+              className="px-4 py-2 bg-green-100 text-green-700 border border-green-300 rounded-md hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-200 flex items-center justify-center flex-1 disabled:opacity-70"
+              onClick={handleSaveItems}
+              disabled={items.length === 0 || saveItemsMutation.isPending}
+              type="button"
+            >
+              <span className="material-icons mr-2">save</span>
+              {saveItemsMutation.isPending ? "Saving..." : "Save Changes"}
             </button>
             <button 
               className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 flex items-center justify-center flex-1 disabled:opacity-70"

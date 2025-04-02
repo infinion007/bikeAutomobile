@@ -182,6 +182,7 @@ export const billingFormSchema = z.object({
   paymentMethod: z.enum(["cash", "card", "upi"]),
   isPaid: z.boolean().default(false),
   notes: z.string().optional(),
+  markAsComplete: z.boolean().optional().default(true),
 });
 
 export type BillingForm = z.infer<typeof billingFormSchema>;

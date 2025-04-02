@@ -401,15 +401,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Parse and validate the billing form
       const billingData = billingFormSchema.parse(req.body);
+      const markAsComplete = billingData.markAsComplete !== false; // Default to true if not specified
       
       // 1. Update service entry with payment information
       const updatedEntry = await storage.updateServiceEntry(billingData.serviceEntryId, {
         totalAmount: billingData.totalAmount,
         isPaid: billingData.isPaid,
         paymentMethod: billingData.paymentMethod,
-        status: 'completed',
+        // Only change status to completed if markAsComplete is true
+        ...(markAsComplete ? { 
+          status: 'completed',
+          completedAt: new Date()
+        } : {}),
         notes: billingData.notes,
-        completedAt: new Date(),
       });
       
       if (!updatedEntry) {
