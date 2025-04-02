@@ -63,7 +63,7 @@ export const serviceStatusEnum = z.enum(["in_progress", "completed", "delivered"
 export type ServiceStatus = z.infer<typeof serviceStatusEnum>;
 
 // Pre-order status enum
-export const preOrderStatusEnum = z.enum(["pending", "delivered", "cancelled"]);
+export const preOrderStatusEnum = z.enum(["pending", "delivered", "cancelled", "refunded"]);
 export type PreOrderStatus = z.infer<typeof preOrderStatusEnum>;
 
 // Service entries table
@@ -131,6 +131,7 @@ export const preOrders = pgTable("pre_orders", {
   customerName: text("customer_name").notNull(),
   contactNumber: text("contact_number").notNull(),
   expectedDeliveryDate: timestamp("expected_delivery_date"),
+  deliveredDate: timestamp("delivered_date"),
   status: text("status").notNull().default("pending"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

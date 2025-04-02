@@ -503,13 +503,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Parse and validate the form data
       const formData = preOrderFormSchema.parse(req.body);
       
+      // Set default expected delivery date to 1 month from now if not provided
+      let expectedDate = formData.expectedDeliveryDate ? new Date(formData.expectedDeliveryDate) : new Date();
+      if (!formData.expectedDeliveryDate) {
+        expectedDate.setMonth(expectedDate.getMonth() + 1);
+      }
+      
       // Create the pre-order
       const preOrder = await storage.createPreOrder({
         itemName: formData.itemName,
         advanceAmount: formData.advanceAmount,
         customerName: formData.customerName,
         contactNumber: formData.contactNumber,
-        expectedDeliveryDate: formData.expectedDeliveryDate ? new Date(formData.expectedDeliveryDate) : undefined,
+        expectedDeliveryDate: expectedDate,
         notes: formData.notes,
         status: 'pending',
       });

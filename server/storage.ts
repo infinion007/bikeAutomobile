@@ -457,7 +457,10 @@ export class MemStorage implements IStorage {
     
     const updatedPreOrder = { 
       ...preOrder, 
-      status: 'delivered' 
+      status: 'delivered',
+      deliveredDate: new Date(),
+      // Remove expectedDeliveryDate once delivered
+      expectedDeliveryDate: null
     };
     this.preOrders.set(id, updatedPreOrder);
     return updatedPreOrder;

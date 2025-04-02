@@ -13,6 +13,13 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
@@ -23,8 +30,9 @@ interface PreOrder {
   advanceAmount: number;
   customerName: string;
   contactNumber: string;
-  expectedDeliveryDate: string;
-  status: 'pending' | 'delivered' | 'cancelled';
+  expectedDeliveryDate: string | null;
+  deliveredDate: string | null;
+  status: 'pending' | 'delivered' | 'cancelled' | 'refunded';
   notes: string;
   createdAt: string;
 }
@@ -42,7 +50,7 @@ interface PreOrderForm {
 export default function PreOrders() {
   const [isNewPreOrderOpen, setIsNewPreOrderOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<'pending' | 'delivered' | 'all'>('pending');
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'delivered' | 'refunded' | 'all'>('pending');
   const [newPreOrder, setNewPreOrder] = useState<PreOrderForm>({
     itemName: "",
     advanceAmount: 0,
@@ -135,7 +143,8 @@ export default function PreOrders() {
         (order: PreOrder) =>
           (statusFilter === 'all' || 
           (statusFilter === 'pending' && order.status === 'pending') || 
-          (statusFilter === 'delivered' && order.status === 'delivered')) &&
+          (statusFilter === 'delivered' && order.status === 'delivered') ||
+          (statusFilter === 'refunded' && order.status === 'refunded')) &&
           (order.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           order.contactNumber.includes(searchTerm))
@@ -158,28 +167,22 @@ export default function PreOrders() {
           className="w-full"
         />
         
-        <div className="flex space-x-2">
-          <Button 
-            variant={statusFilter === 'pending' ? "default" : "outline"}
-            onClick={() => setStatusFilter('pending')}
-            className="flex-1"
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="status-filter" className="w-24">Status Filter:</Label>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as any)}
           >
-            Pending
-          </Button>
-          <Button 
-            variant={statusFilter === 'delivered' ? "default" : "outline"}
-            onClick={() => setStatusFilter('delivered')}
-            className="flex-1"
-          >
-            Completed
-          </Button>
-          <Button 
-            variant={statusFilter === 'all' ? "default" : "outline"}
-            onClick={() => setStatusFilter('all')}
-            className="flex-1"
-          >
-            All
-          </Button>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="refunded">Refunded</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -201,9 +204,13 @@ export default function PreOrders() {
                   <div className={`px-2 py-1 rounded text-xs ${
                     order.status === 'delivered' 
                       ? 'bg-green-100 text-green-800' 
-                      : 'bg-orange-100 text-orange-800'
+                      : order.status === 'pending'
+                        ? 'bg-orange-100 text-orange-800'
+                        : order.status === 'refunded'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
                   }`}>
-                    {order.status === 'delivered' ? 'Delivered' : 'Pending'}
+                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                   </div>
                 </div>
               </CardHeader>
@@ -221,7 +228,12 @@ export default function PreOrders() {
                     <span className="text-gray-600">Contact:</span>
                     <span>{order.contactNumber}</span>
                   </div>
-                  {order.expectedDeliveryDate && (
+                  {order.deliveredDate ? (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Delivered Date:</span>
+                      <span>{new Date(order.deliveredDate).toLocaleDateString()}</span>
+                    </div>
+                  ) : order.expectedDeliveryDate && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Expected Delivery:</span>
                       <span>{new Date(order.expectedDeliveryDate).toLocaleDateString()}</span>
