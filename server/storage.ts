@@ -393,22 +393,28 @@ export class MemStorage implements IStorage {
 
   async getServiceItemsWithProductDetails(serviceEntryId: number): Promise<(ServiceItem & { product: Product })[]> {
     const items = await this.getServiceItems(serviceEntryId);
-    const result: (ServiceItem & { product: Product })[] = [];
     
-    for (const item of items) {
-      const product = this.products.get(item.productId);
-      if (product) {
-        result.push({
-          ...item,
-          product
-        });
-      } else {
-        console.error(`Product not found for productId ${item.productId} in service item ${item.id}`);
-      }
-    }
+    // Since we now store productName directly, we need to create a virtual product for each item
+    // to maintain compatibility with the interface
+    const itemsWithProducts = items.map(item => {
+      // Create a virtual product based on the item's information
+      const virtualProduct: Product = {
+        id: -1, // Use a sentinel value since this doesn't refer to a real product
+        name: item.productName,
+        description: null,
+        type: 'service', // Default type
+        price: item.price,
+        inStock: 0
+      };
+      
+      return {
+        ...item,
+        product: virtualProduct
+      };
+    });
     
-    console.log(`Retrieved ${result.length} service items with product details for service entry ${serviceEntryId}`);
-    return result;
+    console.log(`Retrieved ${itemsWithProducts.length} service items with product details for service entry ${serviceEntryId}`);
+    return itemsWithProducts;
   }
 
   // Helper method to update the total amount of a service entry
