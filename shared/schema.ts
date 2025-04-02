@@ -129,16 +129,33 @@ export type ServiceEntryWithDetails = ServiceEntry & {
   items: (ServiceItem & { product: Product })[];
 };
 
+// Available bike makes
+export const bikeMakes = [
+  "Hero",
+  "Honda",
+  "Bajaj",
+  "TVS",
+  "Royal Enfield",
+  "Yamaha",
+  "Suzuki",
+  "KTM",
+  "Harley-Davidson",
+  "Triumph",
+  "Ducati",
+  "Other"
+] as const;
+
+export const bikeMakeEnum = z.enum(bikeMakes);
+export type BikeMake = z.infer<typeof bikeMakeEnum>;
+
 // Form schemas with validation
 export const vehicleEntryFormSchema = z.object({
-  vehicleType: vehicleTypeEnum,
-  make: z.string().min(1, "Vehicle make is required"),
+  vehicleType: z.literal("bike"),
+  make: bikeMakeEnum,
   model: z.string().optional(),
-  vehicleNumber: z.string().min(1, "Vehicle number is required"),
   customerName: z.string().min(1, "Customer name is required"),
   customerPhone: z.string().min(10, "Valid phone number is required"),
   customerEmail: z.string().email().optional().or(z.literal("")),
-  complaint: z.string().optional(),
   status: serviceStatusEnum.default("waiting"),
 });
 

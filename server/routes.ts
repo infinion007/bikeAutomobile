@@ -323,8 +323,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // 2. Create or get existing vehicle
-      let vehicle = await storage.getVehicleByNumber(formData.vehicleNumber);
+      // 2. Create vehicle (using an auto-generated vehicle number)
+      const generatedVehicleNumber = "AUTO-" + Date.now().toString().slice(-6);
+      
+      // Since our form no longer has vehicleNumber, we need to check if this make/model combination exists
+      const existingVehicles = await storage.getVehiclesByCustomerId(customer.id);
+      let vehicle = existingVehicles.find(v => 
+        v.make === formData.make && 
+        v.model === (formData.model || "")
+      );
       
       if (!vehicle) {
         vehicle = await storage.createVehicle({
@@ -332,14 +339,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: formData.vehicleType,
           make: formData.make,
           model: formData.model || undefined,
-          vehicleNumber: formData.vehicleNumber,
+          vehicleNumber: generatedVehicleNumber,
         });
       }
       
       // 3. Create service entry
       const serviceEntry = await storage.createServiceEntry({
         vehicleId: vehicle.id,
-        complaint: formData.complaint,
+        complaint: "Service for " + formData.make + " " + (formData.model || "bike"),
         status: formData.status,
         totalAmount: 0,
         isPaid: false,

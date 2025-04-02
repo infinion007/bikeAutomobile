@@ -1,11 +1,11 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { VehicleEntryForm, vehicleEntryFormSchema } from "@shared/schema";
+import { VehicleEntryForm, vehicleEntryFormSchema, bikeMakes } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 
 interface NewVehicleEntryModalProps {
@@ -17,12 +17,11 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
   const { toast } = useToast();
   const [, navigate] = useLocation();
   
-  const [servicesOpen, setServicesOpen] = useState(false);
-  
   const { register, handleSubmit, reset, formState: { errors } } = useForm<VehicleEntryForm>({
     resolver: zodResolver(vehicleEntryFormSchema),
     defaultValues: {
       vehicleType: "bike",
+      make: "Hero",
       status: "waiting",
     }
   });
@@ -32,16 +31,13 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
       // Reset form when modal opens
       reset({
         vehicleType: "bike",
-        make: "",
+        make: "Hero",
         model: "",
-        vehicleNumber: "",
         customerName: "",
         customerPhone: "",
         customerEmail: "",
-        complaint: "",
         status: "waiting",
       });
-      setServicesOpen(false);
     }
   }, [isOpen, reset]);
   
@@ -60,6 +56,7 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
   
   const vehicleEntryMutation = useMutation({
     mutationFn: async (data: VehicleEntryForm) => {
+      // The backend will auto-generate a vehicle number since it's not in our form anymore
       const response = await apiRequest("POST", "/api/vehicle-entries", data);
       return response.json();
     },
@@ -91,7 +88,7 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center p-4 border-b border-neutral-200">
-          <h3 className="text-lg font-bold">New Vehicle Entry</h3>
+          <h3 className="text-lg font-bold">New Bike Entry</h3>
           <button 
             onClick={handleClose}
             className="text-neutral-500 hover:text-neutral-700"
@@ -101,55 +98,39 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
         </div>
         
         <form onSubmit={handleSubmit(onSubmit)} className="p-4">
+          {/* Vehicle Make dropdown */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Vehicle Type</label>
-            <div className="flex space-x-4">
-              <label className="flex items-center">
-                <input type="radio" value="bike" {...register("vehicleType")} className="mr-2" />
-                <span>Bike</span>
-              </label>
-              <label className="flex items-center">
-                <input type="radio" value="car" {...register("vehicleType")} className="mr-2" />
-                <span>Car</span>
-              </label>
-              <label className="flex items-center">
-                <input type="radio" value="other" {...register("vehicleType")} className="mr-2" />
-                <span>Other</span>
-              </label>
-            </div>
-            {errors.vehicleType && (
-              <p className="text-red-500 text-xs mt-1">{errors.vehicleType.message}</p>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Bike Make</label>
+            <select
+              {...register("make")}
+              className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              {bikeMakes.map((make) => (
+                <option key={make} value={make}>
+                  {make}
+                </option>
+              ))}
+            </select>
+            {errors.make && (
+              <p className="text-red-500 text-xs mt-1">{errors.make.message}</p>
             )}
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Vehicle Make/Model</label>
-              <input 
-                type="text" 
-                {...register("make")}
-                className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
-                placeholder="e.g. Hero Splendor Plus"
-              />
-              {errors.make && (
-                <p className="text-red-500 text-xs mt-1">{errors.make.message}</p>
-              )}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Vehicle Number</label>
-              <input 
-                type="text" 
-                {...register("vehicleNumber")}
-                className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
-                placeholder="e.g. DL 01 AB 1234"
-              />
-              {errors.vehicleNumber && (
-                <p className="text-red-500 text-xs mt-1">{errors.vehicleNumber.message}</p>
-              )}
-            </div>
+          {/* Model input */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Bike Model</label>
+            <input 
+              type="text" 
+              {...register("model")}
+              className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
+              placeholder="e.g. Splendor Plus, CD 100"
+            />
+            {errors.model && (
+              <p className="text-red-500 text-xs mt-1">{errors.model.message}</p>
+            )}
           </div>
           
+          {/* Customer Information section */}
           <div className="mt-4">
             <label className="block text-sm font-medium text-neutral-700 mb-1">Customer Information</label>
             <div className="flex space-x-2">
@@ -178,6 +159,7 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
             </div>
           </div>
           
+          {/* Email field */}
           <div className="mt-4">
             <label className="block text-sm font-medium text-neutral-700 mb-1">Email (Optional)</label>
             <input 
@@ -191,19 +173,8 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
             )}
           </div>
           
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Initial Complaint/Work Required</label>
-            <textarea 
-              {...register("complaint")}
-              className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent h-24 resize-none" 
-              placeholder="Describe the work needed..."
-            />
-            {errors.complaint && (
-              <p className="text-red-500 text-xs mt-1">{errors.complaint.message}</p>
-            )}
-          </div>
-          
-          <div className="mt-4 border-t border-neutral-200 pt-4 flex justify-end gap-3">
+          {/* Form buttons */}
+          <div className="mt-6 border-t border-neutral-200 pt-4 flex justify-end gap-3">
             <button 
               type="button" 
               onClick={handleClose}
