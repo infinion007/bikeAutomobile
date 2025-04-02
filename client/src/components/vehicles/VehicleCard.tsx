@@ -14,7 +14,8 @@ export default function VehicleCard({ entry, onUpdateStatus }: VehicleCardProps)
   const { vehicle, status, totalAmount, entryDate, items = [] } = entry;
   const statusStyle = getStatusColor(status);
   
-  const vehicleIcon = vehicle.type === 'bike' ? 'two_wheeler' : 'directions_car';
+  // Default to 'bike' if type is undefined
+  const vehicleIcon = (vehicle && vehicle.type) ? (vehicle.type === 'bike' ? 'two_wheeler' : 'directions_car') : 'two_wheeler';
   
   const services = items
     .map(item => item.product.name)
@@ -29,13 +30,13 @@ export default function VehicleCard({ entry, onUpdateStatus }: VehicleCardProps)
           <div>
             <div className="flex items-center">
               <span className="material-icons text-primary mr-2">{vehicleIcon}</span>
-              <span className="font-medium">{vehicle.make} {vehicle.model}</span>
+              <span className="font-medium">{vehicle?.make || 'Unknown'} {vehicle?.model || ''}</span>
               <span className={`ml-2 px-2 py-0.5 ${statusStyle.bg} ${statusStyle.text} rounded-full text-xs`}>
                 {getStatusLabel(status)}
               </span>
             </div>
             <div className="text-sm text-neutral-600 mt-1">
-              {vehicle.vehicleNumber} • {vehicle.customer.name}
+              {vehicle?.vehicleNumber || 'No number'} • {vehicle?.customer?.name || 'Unknown customer'}
             </div>
             <div className="text-sm mt-1">
               Services: {services}
