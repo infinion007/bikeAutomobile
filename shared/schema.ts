@@ -62,6 +62,10 @@ export type Vehicle = typeof vehicles.$inferSelect;
 export const serviceStatusEnum = z.enum(["in_progress", "completed", "delivered"]);
 export type ServiceStatus = z.infer<typeof serviceStatusEnum>;
 
+// Pre-order status enum
+export const preOrderStatusEnum = z.enum(["pending", "delivered", "cancelled"]);
+export type PreOrderStatus = z.infer<typeof preOrderStatusEnum>;
+
 // Service entries table
 export const serviceEntries = pgTable("service_entries", {
   id: serial("id").primaryKey(),
@@ -106,7 +110,7 @@ export type Product = typeof products.$inferSelect;
 export const serviceItems = pgTable("service_items", {
   id: serial("id").primaryKey(),
   serviceEntryId: integer("service_entry_id").notNull(),
-  productId: integer("product_id").notNull(),
+  productName: text("product_name").notNull(), // Store the product name directly
   quantity: integer("quantity").notNull().default(1),
   price: real("price").notNull(), // Price at the time of service
   notes: text("notes"),
@@ -119,6 +123,39 @@ export const insertServiceItemSchema = createInsertSchema(serviceItems).omit({
 export type InsertServiceItem = z.infer<typeof insertServiceItemSchema>;
 export type ServiceItem = typeof serviceItems.$inferSelect;
 
+// Pre-orders table
+export const preOrders = pgTable("pre_orders", {
+  id: serial("id").primaryKey(),
+  itemName: text("item_name").notNull(),
+  advanceAmount: real("advance_amount").notNull().default(0),
+  customerName: text("customer_name").notNull(),
+  contactNumber: text("contact_number").notNull(),
+  expectedDeliveryDate: timestamp("expected_delivery_date"),
+  status: text("status").notNull().default("pending"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertPreOrderSchema = createInsertSchema(preOrders).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPreOrder = z.infer<typeof insertPreOrderSchema>;
+export type PreOrder = typeof preOrders.$inferSelect;
+
+// Pre-order form schema
+export const preOrderFormSchema = z.object({
+  itemName: z.string().min(1, "Item name is required"),
+  advanceAmount: z.number().min(0, "Advance amount cannot be negative"),
+  customerName: z.string().min(1, "Customer name is required"),
+  contactNumber: z.string().min(1, "Contact number is required"),
+  expectedDeliveryDate: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type PreOrderForm = z.infer<typeof preOrderFormSchema>;
+
 // Combined types for frontend use
 export type VehicleWithCustomer = Vehicle & {
   customer: Customer;
@@ -126,7 +163,7 @@ export type VehicleWithCustomer = Vehicle & {
 
 export type ServiceEntryWithDetails = ServiceEntry & {
   vehicle: VehicleWithCustomer;
-  items: (ServiceItem & { product: Product })[];
+  items: ServiceItem[];
 };
 
 // Available bike makes
@@ -163,8 +200,8 @@ export type VehicleEntryForm = z.infer<typeof vehicleEntryFormSchema>;
 
 export const serviceItemFormSchema = z.object({
   id: z.number().optional(),
-  productId: z.number(),
-  productName: z.string(),
+  productId: z.number().optional(),
+  productName: z.string().min(1, "Item name is required"),
   quantity: z.number().min(1),
   price: z.number().min(0),
   notes: z.string().optional(),

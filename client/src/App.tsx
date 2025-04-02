@@ -5,8 +5,7 @@ import MainLayout from "./components/layouts/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import NewVehicleEntry from "./pages/NewVehicleEntry";
 import ActiveVehicles from "./pages/ActiveVehicles";
-import Customers from "./pages/Customers";
-import Inventory from "./pages/Inventory";
+import PreOrders from "./pages/PreOrders";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/not-found";
@@ -28,8 +27,7 @@ function App() {
             {() => <NewVehicleEntry openModal={openNewVehicleModal} />}
           </Route>
           <Route path="/vehicles" component={ActiveVehicles} />
-          <Route path="/customers" component={Customers} />
-          <Route path="/inventory" component={Inventory} />
+          <Route path="/pre-orders" component={PreOrders} />
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />

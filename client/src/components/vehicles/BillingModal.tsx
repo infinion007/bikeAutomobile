@@ -30,19 +30,16 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
     enabled: isOpen && !!serviceEntryId,
   });
   
-  // Fetch products for adding to bill
-  const { data: products } = useQuery({
-    queryKey: ['/api/products'],
-    enabled: isOpen,
-  });
+  // Removed products query since we're using text input for items now
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemPrice, setNewItemPrice] = useState("");
   
   // Initialize items from service entry data
   useEffect(() => {
     if (serviceEntry && serviceEntry.items && Array.isArray(serviceEntry.items) && serviceEntry.items.length > 0) {
       const initialItems = serviceEntry.items.map(item => ({
         id: item.id,
-        productId: item.product.id,
-        productName: item.product.name,
+        productName: item.productName,
         quantity: item.quantity,
         price: item.price,
         notes: item.notes || '',
@@ -59,29 +56,43 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
     setTotals(calculateTotals(items, totals.discount));
   }, [items]);
   
-  // Handle adding a product to the bill
-  const handleAddProduct = (product: Product) => {
-    // Check if product already exists
-    const existingItemIndex = items.findIndex(item => item.productId === product.id);
-    
-    if (existingItemIndex >= 0) {
-      // Increment quantity if already exists
-      const updatedItems = [...items];
-      updatedItems[existingItemIndex].quantity += 1;
-      setItems(updatedItems);
-    } else {
-      // Add new item
-      setItems([
-        ...items,
-        {
-          productId: product.id,
-          productName: product.name,
-          quantity: 1,
-          price: product.price,
-          notes: '',
-        }
-      ]);
+  // Handle adding a custom item to the bill
+  const handleAddItem = () => {
+    // Validate inputs
+    if (!newItemName.trim()) {
+      toast({
+        title: "Error",
+        description: "Item name is required",
+        variant: "destructive",
+      });
+      return;
     }
+    
+    const price = parseFloat(newItemPrice);
+    if (isNaN(price) || price <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid price",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Add new item
+    setItems([
+      ...items,
+      {
+        productName: newItemName.trim(),
+        quantity: 1,
+        price: price,
+        notes: '',
+      }
+    ]);
+    
+    // Reset form
+    setNewItemName("");
+    setNewItemPrice("");
+    document.getElementById('productDropdown')?.classList.add('hidden');
   };
   
   // Handle removing an item
@@ -140,8 +151,7 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
       if (data && data.items && Array.isArray(data.items)) {
         const updatedItems = data.items.map(item => ({
           id: item.id,
-          productId: item.product.id,
-          productName: item.product.name,
+          productName: item.productName,
           quantity: item.quantity,
           price: item.price,
           notes: item.notes || '',
@@ -277,23 +287,42 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
                 
                 <div 
                   id="productDropdown" 
-                  className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg p-1 z-10 hidden"
+                  className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-md shadow-lg p-3 z-10 hidden"
                 >
-                  <div className="max-h-64 overflow-y-auto">
-                    {Array.isArray(products) && products.map((product: Product) => (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Item Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        placeholder="e.g. Engine Oil Change"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Price (₹)
+                      </label>
+                      <input
+                        type="number"
+                        value={newItemPrice}
+                        onChange={(e) => setNewItemPrice(e.target.value)}
+                        placeholder="e.g. 500"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div className="pt-2">
                       <button
-                        key={product.id}
                         type="button"
-                        onClick={() => {
-                          handleAddProduct(product);
-                          document.getElementById('productDropdown')?.classList.add('hidden');
-                        }}
-                        className="w-full text-left p-2 hover:bg-gray-100 rounded-md flex justify-between items-center"
+                        onClick={handleAddItem}
+                        className="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700"
                       >
-                        <span>{product.name}</span>
-                        <span className="text-sm text-gray-600">{formatCurrency(product.price)}</span>
+                        Add Item
                       </button>
-                    ))}
+                    </div>
                   </div>
                 </div>
               </div>

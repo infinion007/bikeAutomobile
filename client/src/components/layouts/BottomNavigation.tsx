@@ -42,14 +42,14 @@ export default function BottomNavigation({ openNewVehicleModal }: BottomNavigati
         </button>
         
         <Link 
-          href="/inventory"
+          href="/pre-orders"
           className={cn(
             "flex flex-col items-center p-1",
-            location === "/inventory" ? "text-primary" : "text-neutral-600"
+            location === "/pre-orders" ? "text-primary" : "text-neutral-600"
           )}
         >
-          <span className="material-icons">inventory_2</span>
-          <span className="text-xs">Inventory</span>
+          <span className="material-icons">shopping_cart</span>
+          <span className="text-xs">Pre-Orders</span>
         </Link>
         
         <Link 

@@ -6,9 +6,11 @@ import {
   insertVehicleSchema, 
   insertServiceEntrySchema, 
   insertServiceItemSchema,
+  insertPreOrderSchema,
   vehicleEntryFormSchema,
   serviceItemFormSchema,
-  billingFormSchema
+  billingFormSchema,
+  preOrderFormSchema
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -466,6 +468,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Error in billing endpoint:", err);
       handleZodError(err, res);
+    }
+  });
+
+  // Pre-Orders
+  app.get("/api/pre-orders", async (req, res) => {
+    try {
+      const preOrders = await storage.getPreOrders();
+      res.json(preOrders);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to fetch pre-orders" });
+    }
+  });
+
+  app.get("/api/pre-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const preOrder = await storage.getPreOrder(id);
+      
+      if (!preOrder) {
+        return res.status(404).json({ message: "Pre-order not found" });
+      }
+      
+      res.json(preOrder);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to fetch pre-order" });
+    }
+  });
+
+  app.post("/api/pre-orders", async (req, res) => {
+    try {
+      // Parse and validate the form data
+      const formData = preOrderFormSchema.parse(req.body);
+      
+      // Create the pre-order
+      const preOrder = await storage.createPreOrder({
+        itemName: formData.itemName,
+        advanceAmount: formData.advanceAmount,
+        customerName: formData.customerName,
+        contactNumber: formData.contactNumber,
+        expectedDeliveryDate: formData.expectedDeliveryDate ? new Date(formData.expectedDeliveryDate) : undefined,
+        notes: formData.notes,
+        status: 'pending',
+      });
+      
+      res.status(201).json(preOrder);
+    } catch (err) {
+      console.error("Error creating pre-order:", err);
+      handleZodError(err, res);
+    }
+  });
+
+  app.post("/api/pre-orders/:id/deliver", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updatedPreOrder = await storage.markPreOrderAsDelivered(id);
+      
+      if (!updatedPreOrder) {
+        return res.status(404).json({ message: "Pre-order not found" });
+      }
+      
+      res.json(updatedPreOrder);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to update pre-order status" });
+    }
+  });
+
+  app.patch("/api/pre-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const preOrderData = req.body;
+      
+      const updatedPreOrder = await storage.updatePreOrder(id, preOrderData);
+      if (!updatedPreOrder) {
+        return res.status(404).json({ message: "Pre-order not found" });
+      }
+      
+      res.json(updatedPreOrder);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to update pre-order" });
     }
   });
 

@@ -4,6 +4,7 @@ import {
   serviceEntries, type ServiceEntry, type InsertServiceEntry,
   products, type Product, type InsertProduct,
   serviceItems, type ServiceItem, type InsertServiceItem,
+  preOrders, type PreOrder, type InsertPreOrder,
   type VehicleWithCustomer,
   type ServiceEntryWithDetails
 } from "@shared/schema";
@@ -55,6 +56,13 @@ export interface IStorage {
   deleteServiceItem(id: number): Promise<boolean>;
   getServiceItemsWithProductDetails(serviceEntryId: number): Promise<(ServiceItem & { product: Product })[]>;
   
+  // Pre-order operations
+  getPreOrders(): Promise<PreOrder[]>;
+  getPreOrder(id: number): Promise<PreOrder | undefined>;
+  createPreOrder(preOrder: InsertPreOrder): Promise<PreOrder>;
+  updatePreOrder(id: number, preOrder: Partial<PreOrder>): Promise<PreOrder | undefined>;
+  markPreOrderAsDelivered(id: number): Promise<PreOrder | undefined>;
+  
   // Dashboard and reporting operations
   getDailyStats(date: Date): Promise<{
     vehicleCount: number;
@@ -72,6 +80,7 @@ export class MemStorage implements IStorage {
   private products: Map<number, Product>;
   private serviceItems: Map<number, ServiceItem>;
   private users: Map<number, any>;
+  private preOrders: Map<number, PreOrder>;
   
   private customerIdCounter: number;
   private vehicleIdCounter: number;
@@ -79,6 +88,7 @@ export class MemStorage implements IStorage {
   private productIdCounter: number;
   private serviceItemIdCounter: number;
   private userIdCounter: number;
+  private preOrderIdCounter: number;
 
   constructor() {
     this.customers = new Map();
@@ -87,6 +97,7 @@ export class MemStorage implements IStorage {
     this.products = new Map();
     this.serviceItems = new Map();
     this.users = new Map();
+    this.preOrders = new Map();
     
     this.customerIdCounter = 1;
     this.vehicleIdCounter = 1;
@@ -94,6 +105,7 @@ export class MemStorage implements IStorage {
     this.productIdCounter = 1;
     this.serviceItemIdCounter = 1;
     this.userIdCounter = 1;
+    this.preOrderIdCounter = 1;
     
     // Add some default products
     this.initializeProducts();
@@ -410,6 +422,47 @@ export class MemStorage implements IStorage {
     this.serviceEntries.set(serviceEntryId, entry);
   }
 
+  // Pre-order methods
+  async getPreOrders(): Promise<PreOrder[]> {
+    return Array.from(this.preOrders.values());
+  }
+
+  async getPreOrder(id: number): Promise<PreOrder | undefined> {
+    return this.preOrders.get(id);
+  }
+
+  async createPreOrder(preOrderData: InsertPreOrder): Promise<PreOrder> {
+    const id = this.preOrderIdCounter++;
+    const preOrder: PreOrder = {
+      ...preOrderData,
+      id,
+      createdAt: new Date()
+    };
+    this.preOrders.set(id, preOrder);
+    return preOrder;
+  }
+
+  async updatePreOrder(id: number, preOrderData: Partial<PreOrder>): Promise<PreOrder | undefined> {
+    const preOrder = this.preOrders.get(id);
+    if (!preOrder) return undefined;
+    
+    const updatedPreOrder = { ...preOrder, ...preOrderData };
+    this.preOrders.set(id, updatedPreOrder);
+    return updatedPreOrder;
+  }
+
+  async markPreOrderAsDelivered(id: number): Promise<PreOrder | undefined> {
+    const preOrder = this.preOrders.get(id);
+    if (!preOrder) return undefined;
+    
+    const updatedPreOrder = { 
+      ...preOrder, 
+      status: 'delivered' 
+    };
+    this.preOrders.set(id, updatedPreOrder);
+    return updatedPreOrder;
+  }
+
   // Dashboard and reporting operations
   async getDailyStats(date: Date): Promise<{
     vehicleCount: number;
@@ -422,16 +475,16 @@ export class MemStorage implements IStorage {
     const vehicleCount = entries.length;
     
     const activeJobs = entries.filter(
-      (entry) => entry.status === 'waiting' || entry.status === 'in_progress'
+      (entry) => entry.status === 'in_progress'
     ).length;
     
     const totalRevenue = entries
       .filter((entry) => entry.isPaid)
-      .reduce((sum, entry) => sum + entry.totalAmount, 0);
+      .reduce((sum, entry) => sum + (entry.totalAmount || 0), 0);
     
     const pendingPayments = entries
       .filter((entry) => !entry.isPaid && entry.status === 'completed')
-      .reduce((sum, entry) => sum + entry.totalAmount, 0);
+      .reduce((sum, entry) => sum + (entry.totalAmount || 0), 0);
     
     return {
       vehicleCount,
