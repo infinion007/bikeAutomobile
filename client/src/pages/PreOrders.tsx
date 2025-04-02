@@ -42,6 +42,7 @@ interface PreOrderForm {
 export default function PreOrders() {
   const [isNewPreOrderOpen, setIsNewPreOrderOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'delivered' | 'all'>('pending');
   const [newPreOrder, setNewPreOrder] = useState<PreOrderForm>({
     itemName: "",
     advanceAmount: 0,
@@ -128,13 +129,16 @@ export default function PreOrders() {
     createPreOrderMutation.mutate(newPreOrder);
   };
 
-  // Filter pre-orders based on search term
+  // Filter pre-orders based on search term and status filter
   const filteredPreOrders = Array.isArray(preOrders)
     ? preOrders.filter(
         (order: PreOrder) =>
-          order.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (statusFilter === 'all' || 
+          (statusFilter === 'pending' && order.status === 'pending') || 
+          (statusFilter === 'delivered' && order.status === 'delivered')) &&
+          (order.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          order.contactNumber.includes(searchTerm)
+          order.contactNumber.includes(searchTerm))
       )
     : [];
 
@@ -145,7 +149,7 @@ export default function PreOrders() {
         <Button onClick={() => setIsNewPreOrderOpen(true)}>New Pre-Order</Button>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 space-y-3">
         <Input
           type="text"
           placeholder="Search by item name, customer or phone..."
@@ -153,6 +157,30 @@ export default function PreOrders() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full"
         />
+        
+        <div className="flex space-x-2">
+          <Button 
+            variant={statusFilter === 'pending' ? "default" : "outline"}
+            onClick={() => setStatusFilter('pending')}
+            className="flex-1"
+          >
+            Pending
+          </Button>
+          <Button 
+            variant={statusFilter === 'delivered' ? "default" : "outline"}
+            onClick={() => setStatusFilter('delivered')}
+            className="flex-1"
+          >
+            Completed
+          </Button>
+          <Button 
+            variant={statusFilter === 'all' ? "default" : "outline"}
+            onClick={() => setStatusFilter('all')}
+            className="flex-1"
+          >
+            All
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -170,7 +198,11 @@ export default function PreOrders() {
               <CardHeader className="pb-2">
                 <div className="flex justify-between">
                   <CardTitle className="text-lg">{order.itemName}</CardTitle>
-                  <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
+                  <div className={`px-2 py-1 rounded text-xs ${
+                    order.status === 'delivered' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-orange-100 text-orange-800'
+                  }`}>
                     {order.status === 'delivered' ? 'Delivered' : 'Pending'}
                   </div>
                 </div>
