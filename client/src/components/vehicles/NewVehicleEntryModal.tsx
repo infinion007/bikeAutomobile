@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 
 interface NewVehicleEntryModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface NewVehicleEntryModalProps {
 
 export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntryModalProps) {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   
   const [servicesOpen, setServicesOpen] = useState(false);
   
@@ -43,6 +45,19 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
     }
   }, [isOpen, reset]);
   
+  const handleClose = () => {
+    // Dispatch custom event that NewVehicleEntry component can listen for
+    window.dispatchEvent(new Event("vehicleModalClosed"));
+    
+    // Call the original onClose function
+    onClose();
+    
+    // If we're on the new-entry route, navigate back to home
+    if (window.location.pathname === "/new-entry") {
+      navigate("/");
+    }
+  };
+  
   const vehicleEntryMutation = useMutation({
     mutationFn: async (data: VehicleEntryForm) => {
       const response = await apiRequest("POST", "/api/vehicle-entries", data);
@@ -54,7 +69,7 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
         description: "New vehicle entry created successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/service-entries"] });
-      onClose();
+      handleClose();
     },
     onError: (error) => {
       toast({
@@ -78,7 +93,7 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
         <div className="flex justify-between items-center p-4 border-b border-neutral-200">
           <h3 className="text-lg font-bold">New Vehicle Entry</h3>
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="text-neutral-500 hover:text-neutral-700"
           >
             <span className="material-icons">close</span>
@@ -191,7 +206,7 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
           <div className="mt-4 border-t border-neutral-200 pt-4 flex justify-end gap-3">
             <button 
               type="button" 
-              onClick={onClose}
+              onClick={handleClose}
               className="px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50"
             >
               Cancel
