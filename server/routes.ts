@@ -156,6 +156,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch service entries" });
     }
   });
+  
+  // Service Entries with complete details (vehicle, customer, items)
+  app.get("/api/service-entries/with-details", async (req, res) => {
+    try {
+      let entries = await storage.getServiceEntries();
+      const detailedEntries = [];
+      
+      // For each entry, fetch the detailed information
+      for (const entry of entries) {
+        const detailedEntry = await storage.getServiceEntryWithDetails(entry.id);
+        if (detailedEntry) {
+          detailedEntries.push(detailedEntry);
+        }
+      }
+      
+      res.json(detailedEntries);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to fetch service entries with details" });
+    }
+  });
 
   app.get("/api/service-entries/:id", async (req, res) => {
     try {

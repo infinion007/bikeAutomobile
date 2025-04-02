@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import VehicleCard from "@/components/vehicles/VehicleCard";
 import { useVehicleEntry } from "@/hooks/use-vehicle-entry";
 
@@ -8,27 +8,71 @@ export default function ActiveVehicles() {
   const [statusFilter, setStatusFilter] = useState("all");
   const { updateServiceStatus } = useVehicleEntry();
   
-  // Fetch active vehicles/service entries
-  const { data: serviceEntries, isLoading } = useQuery({
+  // Fetch active service entries
+  const { data: basicEntries, isLoading: isLoadingBasic } = useQuery({
     queryKey: ["/api/service-entries"],
   });
   
+  // Fetch details for each service entry
+  const [serviceEntries, setServiceEntries] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Effect to fetch detailed information for each entry
+  useEffect(() => {
+    async function fetchDetailsForEntries() {
+      if (!basicEntries || !Array.isArray(basicEntries) || basicEntries.length === 0) {
+        setServiceEntries([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      setIsLoading(true);
+      try {
+        const detailedEntries = await Promise.all(
+          basicEntries.map(async (entry) => {
+            const response = await fetch(`/api/service-entries/${entry.id}/details`);
+            if (response.ok) {
+              return await response.json();
+            }
+            return null;
+          })
+        );
+        
+        // Filter out any null entries (failed requests)
+        setServiceEntries(detailedEntries.filter(entry => entry !== null));
+      } catch (error) {
+        console.error("Error fetching entry details:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchDetailsForEntries();
+  }, [basicEntries]);
+  
   // Filter entries by search term and status
-  const filteredEntries = serviceEntries?.filter((entry: any) => {
-    const matchesSearch = 
-      !searchTerm ||
-      entry.vehicle.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.vehicle.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.vehicle.vehicleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.vehicle.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.vehicle.customer.phone.includes(searchTerm);
-    
-    const matchesStatus = 
-      statusFilter === "all" || 
-      entry.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filteredEntries = serviceEntries && Array.isArray(serviceEntries) 
+    ? serviceEntries.filter((entry: any) => {
+        // First check if entry has vehicle data
+        if (!entry.vehicle) return false;
+        
+        const matchesSearch = 
+          !searchTerm ||
+          (entry.vehicle.make && entry.vehicle.make.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (entry.vehicle.model && entry.vehicle.model.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (entry.vehicle.vehicleNumber && entry.vehicle.vehicleNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (entry.vehicle.customer && entry.vehicle.customer.name && 
+            entry.vehicle.customer.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (entry.vehicle.customer && entry.vehicle.customer.phone && 
+            entry.vehicle.customer.phone.includes(searchTerm));
+        
+        const matchesStatus = 
+          statusFilter === "all" || 
+          entry.status === statusFilter;
+        
+        return matchesSearch && matchesStatus;
+      })
+    : [];
   
   const handleUpdateStatus = (id: number, status: string) => {
     updateServiceStatus.mutate({ id, status });

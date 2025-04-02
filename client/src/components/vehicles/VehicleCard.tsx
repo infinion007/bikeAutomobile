@@ -30,13 +30,27 @@ export default function VehicleCard({ entry, onUpdateStatus }: VehicleCardProps)
           <div>
             <div className="flex items-center">
               <span className="material-icons text-primary mr-2">{vehicleIcon}</span>
-              <span className="font-medium">{vehicle?.make || 'Unknown'} {vehicle?.model || ''}</span>
+              <button 
+                onClick={() => setIsBillingModalOpen(true)}
+                className="font-medium hover:text-primary hover:underline text-left"
+              >
+                {vehicle?.make || 'Unknown'} {vehicle?.model || ''}
+              </button>
               <span className={`ml-2 px-2 py-0.5 ${statusStyle.bg} ${statusStyle.text} rounded-full text-xs`}>
                 {getStatusLabel(status)}
               </span>
             </div>
-            <div className="text-sm text-neutral-600 mt-1">
-              {vehicle?.vehicleNumber || 'No number'} • {vehicle?.customer?.name || 'Unknown customer'}
+            <div className="text-sm text-neutral-600 mt-1 flex items-center">
+              <span>{vehicle?.vehicleNumber || 'No number'} • {vehicle?.customer?.name || 'Unknown customer'}</span>
+              {(status === 'waiting' || status === 'in_progress') && (
+                <button 
+                  onClick={() => setIsBillingModalOpen(true)}
+                  className="ml-2 text-xs bg-primary bg-opacity-10 text-primary px-2 py-0.5 rounded-full flex items-center"
+                >
+                  <span className="material-icons text-xs mr-0.5">add</span>
+                  Add Item
+                </button>
+              )}
             </div>
             <div className="text-sm mt-1">
               Services: {services}
