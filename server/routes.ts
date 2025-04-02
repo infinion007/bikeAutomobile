@@ -542,6 +542,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update pre-order status" });
     }
   });
+  
+  app.post("/api/pre-orders/:id/refund", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updatedPreOrder = await storage.markPreOrderAsRefunded(id);
+      
+      if (!updatedPreOrder) {
+        return res.status(404).json({ message: "Pre-order not found" });
+      }
+      
+      res.json(updatedPreOrder);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to mark pre-order as refunded" });
+    }
+  });
 
   app.patch("/api/pre-orders/:id", async (req, res) => {
     try {

@@ -51,12 +51,19 @@ export default function PreOrders() {
   const [isNewPreOrderOpen, setIsNewPreOrderOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<'pending' | 'delivered' | 'refunded' | 'all'>('pending');
+  // Set default expected delivery date to 1 month in the future
+  const getDefaultDeliveryDate = () => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
+    return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+  };
+
   const [newPreOrder, setNewPreOrder] = useState<PreOrderForm>({
     itemName: "",
     advanceAmount: 0,
     customerName: "",
     contactNumber: "",
-    expectedDeliveryDate: "",
+    expectedDeliveryDate: getDefaultDeliveryDate(),
     notes: "",
   });
 
@@ -86,7 +93,7 @@ export default function PreOrders() {
         advanceAmount: 0,
         customerName: "",
         contactNumber: "",
-        expectedDeliveryDate: "",
+        expectedDeliveryDate: getDefaultDeliveryDate(),
         notes: "",
       });
       toast({
@@ -118,6 +125,39 @@ export default function PreOrders() {
       toast({
         title: "Success",
         description: "Pre-order marked as delivered",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to mark pre-order as delivered",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mark as refunded mutation
+  const markAsRefundedMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return fetch(`/api/pre-orders/${id}/refund`, {
+        method: "POST",
+      }).then((res) => {
+        if (!res.ok) throw new Error("Failed to mark as refunded");
+        return res.json();
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pre-orders"] });
+      toast({
+        title: "Success",
+        description: "Pre-order amount refunded",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to refund pre-order",
+        variant: "destructive",
       });
     },
   });
@@ -246,12 +286,21 @@ export default function PreOrders() {
                     </div>
                   )}
                   {order.status === 'pending' && (
-                    <Button
-                      className="w-full mt-2"
-                      onClick={() => markAsDeliveredMutation.mutate(order.id)}
-                    >
-                      Mark as Delivered
-                    </Button>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        className="flex-1"
+                        onClick={() => markAsDeliveredMutation.mutate(order.id)}
+                      >
+                        Mark as Delivered
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        variant="destructive"
+                        onClick={() => markAsRefundedMutation.mutate(order.id)}
+                      >
+                        Amount Refunded
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardContent>

@@ -62,6 +62,7 @@ export interface IStorage {
   createPreOrder(preOrder: InsertPreOrder): Promise<PreOrder>;
   updatePreOrder(id: number, preOrder: Partial<PreOrder>): Promise<PreOrder | undefined>;
   markPreOrderAsDelivered(id: number): Promise<PreOrder | undefined>;
+  markPreOrderAsRefunded(id: number): Promise<PreOrder | undefined>;
   
   // Dashboard and reporting operations
   getDailyStats(date: Date): Promise<{
@@ -460,6 +461,20 @@ export class MemStorage implements IStorage {
       status: 'delivered',
       deliveredDate: new Date(),
       // Remove expectedDeliveryDate once delivered
+      expectedDeliveryDate: null
+    };
+    this.preOrders.set(id, updatedPreOrder);
+    return updatedPreOrder;
+  }
+  
+  async markPreOrderAsRefunded(id: number): Promise<PreOrder | undefined> {
+    const preOrder = this.preOrders.get(id);
+    if (!preOrder) return undefined;
+    
+    const updatedPreOrder = { 
+      ...preOrder, 
+      status: 'refunded',
+      // Remove expectedDeliveryDate once refunded
       expectedDeliveryDate: null
     };
     this.preOrders.set(id, updatedPreOrder);
