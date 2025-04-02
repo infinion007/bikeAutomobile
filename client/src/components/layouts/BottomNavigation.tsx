@@ -12,17 +12,6 @@ export default function BottomNavigation({ openNewVehicleModal }: BottomNavigati
     <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-neutral-200 z-10">
       <div className="flex justify-around p-2">
         <Link 
-          href="/"
-          className={cn(
-            "flex flex-col items-center p-1",
-            location === "/" ? "text-primary" : "text-neutral-600"
-          )}
-        >
-          <span className="material-icons">dashboard</span>
-          <span className="text-xs">Dashboard</span>
-        </Link>
-        
-        <Link 
           href="/vehicles"
           className={cn(
             "flex flex-col items-center p-1",
@@ -31,6 +20,17 @@ export default function BottomNavigation({ openNewVehicleModal }: BottomNavigati
         >
           <span className="material-icons">directions_car</span>
           <span className="text-xs">Vehicles</span>
+        </Link>
+        
+        <Link 
+          href="/"
+          className={cn(
+            "flex flex-col items-center p-1",
+            location === "/" ? "text-primary" : "text-neutral-600"
+          )}
+        >
+          <span className="material-icons">dashboard</span>
+          <span className="text-xs">Dashboard</span>
         </Link>
         
         <button 

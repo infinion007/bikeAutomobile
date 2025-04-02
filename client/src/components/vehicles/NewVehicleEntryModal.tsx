@@ -22,7 +22,7 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
     defaultValues: {
       vehicleType: "bike",
       make: "Hero",
-      status: "waiting",
+      status: "in_progress",
     }
   });
   
@@ -36,7 +36,7 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
         customerName: "",
         customerPhone: "",
         customerEmail: "",
-        status: "waiting",
+        status: "in_progress",
       });
     }
   }, [isOpen, reset]);

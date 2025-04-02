@@ -5,7 +5,7 @@ import { useVehicleEntry } from "@/hooks/use-vehicle-entry";
 
 export default function ActiveVehicles() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("in_progress");
   const { updateServiceStatus } = useVehicleEntry();
   
   // Fetch active service entries
@@ -101,7 +101,6 @@ export default function ActiveVehicles() {
             className="p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="all">All Status</option>
-            <option value="waiting">Waiting</option>
             <option value="in_progress">In Progress</option>
             <option value="completed">Completed</option>
             <option value="delivered">Delivered</option>

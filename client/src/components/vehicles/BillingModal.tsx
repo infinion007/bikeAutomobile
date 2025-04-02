@@ -16,8 +16,13 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
   const { toast } = useToast();
   
   const [items, setItems] = useState<ServiceItemForm[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "upi" | "card">("cash");
-  const [totals, setTotals] = useState({ subtotal: 0, taxRate: 0.18, taxAmount: 0, totalAmount: 0 });
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "upi" | "card" | "split">("cash");
+  const [totals, setTotals] = useState({ subtotal: 0, taxRate: 0.18, taxAmount: 0, totalAmount: 0, discount: 0 });
+  const [splitPayments, setSplitPayments] = useState({
+    cash: 0,
+    upi: 0,
+    card: 0
+  });
   
   // Fetch service entry details
   const { data: serviceEntry, isLoading: isLoadingServiceEntry } = useQuery<ServiceEntryWithDetails>({
@@ -51,7 +56,7 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
   
   // Update totals when items change
   useEffect(() => {
-    setTotals(calculateTotals(items));
+    setTotals(calculateTotals(items, totals.discount));
   }, [items]);
   
   // Handle adding a product to the bill
@@ -156,14 +161,31 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
   });
   
   const handleCompleteBilling = () => {
+    // Validate split payments if that payment method is selected
+    if (paymentMethod === "split") {
+      const splitTotal = splitPayments.cash + splitPayments.upi + splitPayments.card;
+      const billTotal = totals.totalAmount - totals.discount;
+      
+      if (Math.abs(splitTotal - billTotal) > 0.01) { // Small tolerance for floating point errors
+        toast({
+          title: "Error",
+          description: "Split payment total must equal the bill amount.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
     const billingData: BillingForm = {
       serviceEntryId,
       items,
       subtotal: totals.subtotal,
       taxRate: totals.taxRate,
       taxAmount: totals.taxAmount,
-      totalAmount: totals.totalAmount,
+      totalAmount: totals.totalAmount - totals.discount, // Apply discount
+      discount: totals.discount,
       paymentMethod,
+      splitPayments: paymentMethod === "split" ? splitPayments : undefined,
       isPaid: true,
       notes: '',
       markAsComplete: true,
@@ -179,8 +201,10 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
       subtotal: totals.subtotal,
       taxRate: totals.taxRate,
       taxAmount: totals.taxAmount,
-      totalAmount: totals.totalAmount,
+      totalAmount: totals.totalAmount - totals.discount, // Apply discount
+      discount: totals.discount,
       paymentMethod,
+      splitPayments: paymentMethod === "split" ? splitPayments : undefined,
       isPaid: false, // Not marking as paid
       notes: '',
       markAsComplete: false, // New flag to indicate we're just saving items
@@ -333,9 +357,27 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
               <span className="text-neutral-600">GST (18%)</span>
               <span className="font-medium">{formatCurrency(totals.taxAmount)}</span>
             </div>
+            <div className="flex justify-between mb-2">
+              <div className="flex items-center">
+                <span className="text-neutral-600 mr-2">Discount</span>
+                <div className="relative">
+                  <input 
+                    type="number" 
+                    value={totals.discount}
+                    onChange={(e) => {
+                      const discount = Math.max(0, Math.min(Number(e.target.value), totals.subtotal + totals.taxAmount));
+                      setTotals({...totals, discount, totalAmount: totals.subtotal + totals.taxAmount - discount});
+                    }}
+                    className="w-16 p-1 text-right border border-neutral-300 rounded-md"
+                  />
+                  <span className="absolute right-2 top-1">₹</span>
+                </div>
+              </div>
+              <span className="font-medium text-red-500">-{formatCurrency(totals.discount)}</span>
+            </div>
             <div className="flex justify-between font-bold text-lg pt-2 border-t border-neutral-200">
               <span>Total</span>
-              <span>{formatCurrency(totals.totalAmount)}</span>
+              <span>{formatCurrency(totals.totalAmount - totals.discount)}</span>
             </div>
           </div>
           
@@ -375,7 +417,60 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
                 />
                 <span>Card</span>
               </label>
+              <label className="flex items-center">
+                <input 
+                  type="radio" 
+                  name="paymentMethod" 
+                  value="split"
+                  checked={paymentMethod === "split"}
+                  onChange={() => setPaymentMethod("split")}
+                  className="mr-2" 
+                />
+                <span>Split Payment</span>
+              </label>
             </div>
+            
+            {paymentMethod === "split" && (
+              <div className="mt-3 bg-neutral-50 p-3 rounded-md">
+                <h5 className="text-sm font-medium mb-2">Split Amount</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm">Cash</label>
+                    <input
+                      type="number"
+                      value={splitPayments.cash}
+                      onChange={(e) => setSplitPayments({...splitPayments, cash: Number(e.target.value)})}
+                      className="w-24 p-1 border border-neutral-300 rounded-md text-right"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm">UPI</label>
+                    <input
+                      type="number"
+                      value={splitPayments.upi}
+                      onChange={(e) => setSplitPayments({...splitPayments, upi: Number(e.target.value)})}
+                      className="w-24 p-1 border border-neutral-300 rounded-md text-right"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm">Card</label>
+                    <input
+                      type="number"
+                      value={splitPayments.card}
+                      onChange={(e) => setSplitPayments({...splitPayments, card: Number(e.target.value)})}
+                      className="w-24 p-1 border border-neutral-300 rounded-md text-right"
+                    />
+                  </div>
+                  <div className="flex justify-between text-sm font-medium pt-2 border-t border-neutral-200">
+                    <span>Total Split</span>
+                    <span className={splitPayments.cash + splitPayments.upi + splitPayments.card === totals.totalAmount - totals.discount ? 
+                      "text-green-600" : "text-red-600"}>
+                      {formatCurrency(splitPayments.cash + splitPayments.upi + splitPayments.card)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="flex justify-between space-x-3 mt-6">

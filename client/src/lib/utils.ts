@@ -66,7 +66,7 @@ export function getTimeSince(date: Date | string): string {
   return `${days} day${days !== 1 ? "s" : ""} ago`;
 }
 
-export function calculateTotals(items: { price: number; quantity: number }[]) {
+export function calculateTotals(items: { price: number; quantity: number }[], discount: number = 0) {
   // GST rate (18%)
   const gstRate = 0.18;
   
@@ -84,6 +84,7 @@ export function calculateTotals(items: { price: number; quantity: number }[]) {
     taxRate: gstRate,
     taxAmount,
     totalAmount,
+    discount: discount,
   };
 }
 
@@ -92,8 +93,6 @@ export function getStatusColor(status: string): {
   text: string;
 } {
   switch (status) {
-    case "waiting":
-      return { bg: "bg-yellow-100", text: "text-yellow-800" };
     case "in_progress":
       return { bg: "bg-blue-100", text: "text-blue-800" };
     case "completed":
@@ -107,8 +106,6 @@ export function getStatusColor(status: string): {
 
 export function getStatusLabel(status: string): string {
   switch (status) {
-    case "waiting":
-      return "Waiting";
     case "in_progress":
       return "In Progress";
     case "completed":

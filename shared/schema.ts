@@ -59,7 +59,7 @@ export type InsertVehicle = z.infer<typeof insertVehicleSchema>;
 export type Vehicle = typeof vehicles.$inferSelect;
 
 // Service Status enum
-export const serviceStatusEnum = z.enum(["waiting", "in_progress", "completed", "delivered"]);
+export const serviceStatusEnum = z.enum(["in_progress", "completed", "delivered"]);
 export type ServiceStatus = z.infer<typeof serviceStatusEnum>;
 
 // Service entries table
@@ -68,7 +68,7 @@ export const serviceEntries = pgTable("service_entries", {
   vehicleId: integer("vehicle_id").notNull(),
   entryDate: timestamp("entry_date").defaultNow().notNull(),
   complaint: text("complaint"),
-  status: text("status").notNull().default("waiting"), // waiting, in_progress, completed, delivered
+  status: text("status").notNull().default("in_progress"), // in_progress, completed, delivered
   totalAmount: real("total_amount").default(0),
   isPaid: boolean("is_paid").default(false),
   paymentMethod: text("payment_method"), // cash, card, upi
@@ -156,7 +156,7 @@ export const vehicleEntryFormSchema = z.object({
   customerName: z.string().min(1, "Customer name is required"),
   customerPhone: z.string().optional().or(z.literal("")),
   customerEmail: z.string().email().optional().or(z.literal("")),
-  status: serviceStatusEnum.default("waiting"),
+  status: z.enum(["in_progress", "completed", "delivered"]).default("in_progress"),
 });
 
 export type VehicleEntryForm = z.infer<typeof vehicleEntryFormSchema>;
@@ -179,7 +179,13 @@ export const billingFormSchema = z.object({
   taxRate: z.number().min(0),
   taxAmount: z.number().min(0),
   totalAmount: z.number().min(0),
-  paymentMethod: z.enum(["cash", "card", "upi"]),
+  discount: z.number().min(0).optional().default(0),
+  paymentMethod: z.enum(["cash", "card", "upi", "split"]),
+  splitPayments: z.object({
+    cash: z.number().min(0).optional().default(0),
+    upi: z.number().min(0).optional().default(0),
+    card: z.number().min(0).optional().default(0),
+  }).optional(),
   isPaid: z.boolean().default(false),
   notes: z.string().optional(),
   markAsComplete: z.boolean().optional().default(true),
