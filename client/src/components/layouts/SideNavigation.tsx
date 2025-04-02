@@ -1,5 +1,9 @@
+import * as React from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+
+// Use React hooks directly
+const { useState, useEffect } = React;
 
 interface SideNavigationProps {
   isOpen: boolean;
@@ -14,13 +18,28 @@ interface NavItem {
 
 export default function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
   const [location] = useLocation();
+  const [shopName, setShopName] = useState<string>("City Auto Shop");
+
+  // Load shop name from localStorage on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('shopSettings');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        if (parsedSettings.shopName) {
+          setShopName(parsedSettings.shopName);
+        }
+      } catch (error) {
+        console.error('Failed to parse saved settings for side navigation:', error);
+      }
+    }
+  }, []);
 
   const navItems: NavItem[] = [
     { path: "/", label: "Dashboard", icon: "dashboard" },
     { path: "/new-entry", label: "New Vehicle Entry", icon: "directions_car" },
     { path: "/vehicles", label: "Active Vehicles", icon: "two_wheeler" },
-    { path: "/customers", label: "Customers", icon: "people" },
-    { path: "/inventory", label: "Inventory", icon: "inventory_2" },
+    { path: "/pre-orders", label: "Pre-Orders", icon: "shopping_cart" },
     { path: "/reports", label: "Reports", icon: "bar_chart" },
     { path: "/settings", label: "Settings", icon: "settings" },
   ];
@@ -36,7 +55,7 @@ export default function SideNavigation({ isOpen, onClose }: SideNavigationProps)
         <div className="flex items-center space-x-3">
           <span className="material-icons text-primary text-3xl">store</span>
           <div>
-            <h2 className="font-bold">City Auto Shop</h2>
+            <h2 className="font-bold shop-name">{shopName}</h2>
             <p className="text-sm text-neutral-600">Workshop Manager</p>
           </div>
         </div>

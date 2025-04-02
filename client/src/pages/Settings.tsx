@@ -1,25 +1,83 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+
+// Define a type for our settings
+interface ShopSettings {
+  shopName: string;
+  ownerName: string;
+  address: string;
+  phone: string;
+  gstNumber: string;
+  taxRate: string;
+  printReceipt: boolean;
+  darkMode: boolean;
+  autoBackup: boolean;
+}
+
+// Default settings
+const defaultSettings: ShopSettings = {
+  shopName: "City Auto Shop",
+  ownerName: "John Doe",
+  address: "123 Workshop Street, City",
+  phone: "9876543210",
+  gstNumber: "22AAAAA0000A1Z5",
+  taxRate: "18",
+  printReceipt: true,
+  darkMode: false,
+  autoBackup: true
+};
 
 export default function Settings() {
   const { toast } = useToast();
-  const [shopName, setShopName] = useState("City Auto Shop");
-  const [ownerName, setOwnerName] = useState("John Doe");
-  const [address, setAddress] = useState("123 Workshop Street, City");
-  const [phone, setPhone] = useState("9876543210");
-  const [gstNumber, setGstNumber] = useState("22AAAAA0000A1Z5");
-  const [taxRate, setTaxRate] = useState("18");
-  const [printReceipt, setPrintReceipt] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [autoBackup, setAutoBackup] = useState(true);
+  const [settings, setSettings] = useState<ShopSettings>(defaultSettings);
+
+  // Load settings from localStorage on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('shopSettings');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        setSettings(parsedSettings);
+      } catch (error) {
+        console.error('Failed to parse saved settings:', error);
+      }
+    }
+  }, []);
+
+  // Update individual setting field
+  const updateSetting = (key: keyof ShopSettings, value: string | boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
   
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In a real application, this would save the settings to the database
+    // Save settings to localStorage
+    localStorage.setItem('shopSettings', JSON.stringify(settings));
+    
+    // Document title update
+    document.title = `${settings.shopName} - AutoShop Manager`;
+    
+    // Update shop name in the header if applicable
+    const shopNameElements = document.querySelectorAll('.shop-name');
+    shopNameElements.forEach(element => {
+      element.textContent = settings.shopName;
+    });
+    
     toast({
       title: "Settings Saved",
       description: "Your settings have been updated successfully",
+    });
+  };
+
+  const handleResetDefaults = () => {
+    setSettings(defaultSettings);
+    toast({
+      title: "Settings Reset",
+      description: "Settings have been reset to defaults",
     });
   };
   
@@ -48,8 +106,8 @@ export default function Settings() {
                 <input 
                   id="shopName"
                   type="text" 
-                  value={shopName}
-                  onChange={(e) => setShopName(e.target.value)}
+                  value={settings.shopName}
+                  onChange={(e) => updateSetting('shopName', e.target.value)}
                   className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
                 />
               </div>
@@ -61,8 +119,8 @@ export default function Settings() {
                 <input 
                   id="ownerName"
                   type="text" 
-                  value={ownerName}
-                  onChange={(e) => setOwnerName(e.target.value)}
+                  value={settings.ownerName}
+                  onChange={(e) => updateSetting('ownerName', e.target.value)}
                   className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
                 />
               </div>
@@ -73,8 +131,8 @@ export default function Settings() {
                 </label>
                 <textarea 
                   id="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  value={settings.address}
+                  onChange={(e) => updateSetting('address', e.target.value)}
                   className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent h-20" 
                 />
               </div>
@@ -86,8 +144,8 @@ export default function Settings() {
                 <input 
                   id="phone"
                   type="tel" 
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  value={settings.phone}
+                  onChange={(e) => updateSetting('phone', e.target.value)}
                   className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
                 />
               </div>
@@ -104,8 +162,8 @@ export default function Settings() {
                 <input 
                   id="gstNumber"
                   type="text" 
-                  value={gstNumber}
-                  onChange={(e) => setGstNumber(e.target.value)}
+                  value={settings.gstNumber}
+                  onChange={(e) => updateSetting('gstNumber', e.target.value)}
                   className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
                 />
               </div>
@@ -117,8 +175,8 @@ export default function Settings() {
                 <input 
                   id="taxRate"
                   type="number" 
-                  value={taxRate}
-                  onChange={(e) => setTaxRate(e.target.value)}
+                  value={settings.taxRate}
+                  onChange={(e) => updateSetting('taxRate', e.target.value)}
                   min="0"
                   max="100"
                   className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
@@ -130,8 +188,8 @@ export default function Settings() {
                   <input 
                     id="printReceipt" 
                     type="checkbox"
-                    checked={printReceipt}
-                    onChange={(e) => setPrintReceipt(e.target.checked)}
+                    checked={settings.printReceipt}
+                    onChange={(e) => updateSetting('printReceipt', e.target.checked)}
                     className="h-4 w-4 text-primary focus:ring-primary border-neutral-300 rounded"
                   />
                   <label htmlFor="printReceipt" className="ml-2 block text-sm text-neutral-700">
@@ -145,8 +203,8 @@ export default function Settings() {
                   <input 
                     id="darkMode" 
                     type="checkbox"
-                    checked={darkMode}
-                    onChange={(e) => setDarkMode(e.target.checked)}
+                    checked={settings.darkMode}
+                    onChange={(e) => updateSetting('darkMode', e.target.checked)}
                     className="h-4 w-4 text-primary focus:ring-primary border-neutral-300 rounded"
                   />
                   <label htmlFor="darkMode" className="ml-2 block text-sm text-neutral-700">
@@ -160,8 +218,8 @@ export default function Settings() {
                   <input 
                     id="autoBackup" 
                     type="checkbox"
-                    checked={autoBackup}
-                    onChange={(e) => setAutoBackup(e.target.checked)}
+                    checked={settings.autoBackup}
+                    onChange={(e) => updateSetting('autoBackup', e.target.checked)}
                     className="h-4 w-4 text-primary focus:ring-primary border-neutral-300 rounded"
                   />
                   <label htmlFor="autoBackup" className="ml-2 block text-sm text-neutral-700">
@@ -175,6 +233,7 @@ export default function Settings() {
           <div className="border-t border-neutral-200 pt-6 mt-6 flex justify-end">
             <button
               type="button"
+              onClick={handleResetDefaults}
               className="px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 mr-3"
             >
               Reset to Defaults

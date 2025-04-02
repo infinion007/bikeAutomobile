@@ -1,5 +1,8 @@
-import { useState } from "react";
+import * as React from "react";
 import { useLocation } from "wouter";
+
+// Use React hooks directly
+const { useState, useEffect } = React;
 
 interface AppHeaderProps {
   toggleSideNav: () => void;
@@ -17,6 +20,24 @@ export default function AppHeader({
   setSearchTerm
 }: AppHeaderProps) {
   const [, navigate] = useLocation();
+  const [shopName, setShopName] = useState<string>("AutoShop Manager");
+
+  // Load shop name from localStorage on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('shopSettings');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        if (parsedSettings.shopName) {
+          setShopName(parsedSettings.shopName);
+          // Also update the document title
+          document.title = `${parsedSettings.shopName} - Workshop Manager`;
+        }
+      } catch (error) {
+        console.error('Failed to parse saved settings for header:', error);
+      }
+    }
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +56,7 @@ export default function AppHeader({
           >
             <span className="material-icons">menu</span>
           </button>
-          <h1 className="text-xl font-bold">AutoShop Manager</h1>
+          <h1 className="text-xl font-bold shop-name">{shopName}</h1>
         </div>
         <div className="flex items-center space-x-2">
           <button 

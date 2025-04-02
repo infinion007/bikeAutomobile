@@ -1,10 +1,13 @@
-import { ReactNode, useState } from "react";
+import * as React from "react";
 import AppHeader from "./AppHeader";
 import SideNavigation from "./SideNavigation";
 import BottomNavigation from "./BottomNavigation";
 
+// Use React.useState instead of importing it directly
+const { useState } = React;
+
 interface MainLayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
   openNewVehicleModal: () => void;
 }
 

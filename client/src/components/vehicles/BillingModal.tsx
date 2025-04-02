@@ -5,6 +5,16 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { formatCurrency, calculateTotals } from "@/lib/utils";
 import { Product, ServiceItemForm, BillingForm, ServiceEntryWithDetails } from "@shared/schema";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface BillingModalProps {
   isOpen: boolean;
@@ -23,6 +33,7 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
     upi: 0,
     card: 0
   });
+  const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
   
   // Fetch service entry details
   const { data: serviceEntry, isLoading: isLoadingServiceEntry } = useQuery<ServiceEntryWithDetails>({
@@ -428,7 +439,7 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
                 <input 
                   type="radio" 
                   name="paymentMethod" 
-                  value="upi"
+                  value="upi" 
                   checked={paymentMethod === "upi"}
                   onChange={() => setPaymentMethod("upi")}
                   className="mr-2" 
@@ -439,7 +450,7 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
                 <input 
                   type="radio" 
                   name="paymentMethod" 
-                  value="card"
+                  value="card" 
                   checked={paymentMethod === "card"}
                   onChange={() => setPaymentMethod("card")}
                   className="mr-2" 
@@ -450,88 +461,106 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
                 <input 
                   type="radio" 
                   name="paymentMethod" 
-                  value="split"
+                  value="split" 
                   checked={paymentMethod === "split"}
                   onChange={() => setPaymentMethod("split")}
                   className="mr-2" 
                 />
-                <span>Split Payment</span>
+                <span>Split</span>
               </label>
             </div>
             
             {paymentMethod === "split" && (
-              <div className="mt-3 bg-neutral-50 p-3 rounded-md">
-                <h5 className="text-sm font-medium mb-2">Split Amount</h5>
+              <div className="mt-3 bg-blue-50 p-3 rounded-md">
+                <div className="text-sm font-medium mb-2">Split Payment</div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm">Cash</label>
-                    <input
+                    <label className="text-sm">Cash (₹)</label>
+                    <input 
                       type="number"
                       value={splitPayments.cash}
-                      onChange={(e) => setSplitPayments({...splitPayments, cash: Number(e.target.value)})}
-                      className="w-24 p-1 border border-neutral-300 rounded-md text-right"
+                      onChange={(e) => setSplitPayments({...splitPayments, cash: Number(e.target.value) || 0})}
+                      className="w-24 p-1 text-right border border-neutral-300 rounded-md"
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm">UPI</label>
-                    <input
+                    <label className="text-sm">UPI (₹)</label>
+                    <input 
                       type="number"
                       value={splitPayments.upi}
-                      onChange={(e) => setSplitPayments({...splitPayments, upi: Number(e.target.value)})}
-                      className="w-24 p-1 border border-neutral-300 rounded-md text-right"
+                      onChange={(e) => setSplitPayments({...splitPayments, upi: Number(e.target.value) || 0})}
+                      className="w-24 p-1 text-right border border-neutral-300 rounded-md"
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm">Card</label>
-                    <input
+                    <label className="text-sm">Card (₹)</label>
+                    <input 
                       type="number"
                       value={splitPayments.card}
-                      onChange={(e) => setSplitPayments({...splitPayments, card: Number(e.target.value)})}
-                      className="w-24 p-1 border border-neutral-300 rounded-md text-right"
+                      onChange={(e) => setSplitPayments({...splitPayments, card: Number(e.target.value) || 0})}
+                      className="w-24 p-1 text-right border border-neutral-300 rounded-md"
                     />
                   </div>
                   <div className="flex justify-between text-sm font-medium pt-2 border-t border-neutral-200">
-                    <span>Total Split</span>
-                    <span className={splitPayments.cash + splitPayments.upi + splitPayments.card === totals.totalAmount - totals.discount ? 
-                      "text-green-600" : "text-red-600"}>
-                      {formatCurrency(splitPayments.cash + splitPayments.upi + splitPayments.card)}
-                    </span>
+                    <span>Split Total</span>
+                    <span>{formatCurrency(splitPayments.cash + splitPayments.upi + splitPayments.card)}</span>
                   </div>
                 </div>
               </div>
             )}
           </div>
           
-          <div className="flex justify-between space-x-3 mt-6">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
             <button 
-              className="px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 flex items-center justify-center flex-1"
+              className="px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 flex items-center justify-center"
               onClick={onClose}
               type="button"
             >
               <span className="material-icons mr-2">close</span>
               Cancel
             </button>
-            <button 
-              className="px-4 py-2 bg-green-100 text-green-700 border border-green-300 rounded-md hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-200 flex items-center justify-center flex-1 disabled:opacity-70"
-              onClick={handleSaveItems}
-              disabled={items.length === 0 || saveItemsMutation.isPending}
-              type="button"
-            >
-              <span className="material-icons mr-2">save</span>
-              {saveItemsMutation.isPending ? "Saving..." : "Save Changes"}
-            </button>
-            <button 
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 flex items-center justify-center flex-1 disabled:opacity-70"
-              onClick={handleCompleteBilling}
-              disabled={items.length === 0 || billingMutation.isPending}
-              type="button"
-            >
-              <span className="material-icons mr-2">check_circle</span>
-              {billingMutation.isPending ? "Processing..." : "Complete & Pay"}
-            </button>
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 sm:flex-1">
+              <button 
+                className="px-4 py-2 bg-green-100 text-green-700 border border-green-300 rounded-md hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-200 flex items-center justify-center flex-1 disabled:opacity-70"
+                onClick={handleSaveItems}
+                disabled={items.length === 0 || saveItemsMutation.isPending}
+                type="button"
+              >
+                <span className="material-icons mr-2">save</span>
+                {saveItemsMutation.isPending ? "Saving..." : "Save Changes"}
+              </button>
+              <button 
+                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 flex items-center justify-center flex-1 disabled:opacity-70"
+                onClick={() => setShowCompletionConfirm(true)}
+                disabled={items.length === 0 || billingMutation.isPending}
+                type="button"
+              >
+                <span className="material-icons mr-2">check_circle</span>
+                {billingMutation.isPending ? "Processing..." : "Complete & Pay"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      
+      {/* Completion Confirmation Dialog */}
+      <AlertDialog open={showCompletionConfirm} onOpenChange={setShowCompletionConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Complete Service & Generate Bill?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the service as completed and generate the final bill.
+              Are you sure you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCompleteBilling}>
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

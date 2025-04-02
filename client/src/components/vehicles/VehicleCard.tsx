@@ -20,7 +20,7 @@ export default function VehicleCard({ entry, onUpdateStatus }: VehicleCardProps)
   const vehicleIcon = (vehicle && vehicle.type) ? (vehicle.type === 'bike' ? 'two_wheeler' : 'directions_car') : 'two_wheeler';
   
   const services = items
-    .map(item => item.product.name)
+    .map(item => item.productName)
     .join(", ")
     || entry.complaint
     || "No services specified";
