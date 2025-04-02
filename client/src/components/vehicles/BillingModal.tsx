@@ -33,7 +33,7 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
   
   // Initialize items from service entry data
   useEffect(() => {
-    if (serviceEntry?.items?.length) {
+    if (serviceEntry && serviceEntry.items && Array.isArray(serviceEntry.items) && serviceEntry.items.length > 0) {
       const initialItems = serviceEntry.items.map(item => ({
         id: item.id,
         productId: item.product.id,
@@ -43,6 +43,9 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
         notes: item.notes || '',
       }));
       setItems(initialItems);
+    } else {
+      // Reset items when opening a service entry with no items
+      setItems([]);
     }
   }, [serviceEntry]);
   
@@ -199,21 +202,23 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
         </div>
         
         <div className="p-4">
-          {serviceEntry && (
+          {serviceEntry && serviceEntry.vehicle && (
             <div className="bg-neutral-100 p-3 rounded-md mb-4">
               <div className="flex items-center mb-2">
                 <span className="material-icons text-primary mr-2">
                   {serviceEntry.vehicle.type === 'bike' ? 'two_wheeler' : 'directions_car'}
                 </span>
                 <span className="font-medium">
-                  {serviceEntry.vehicle.make} {serviceEntry.vehicle.model}
+                  {serviceEntry.vehicle.make || 'Unknown'} {serviceEntry.vehicle.model || ''}
                 </span>
                 <span className="ml-auto text-sm text-neutral-600">
-                  {serviceEntry.vehicle.vehicleNumber}
+                  {serviceEntry.vehicle.vehicleNumber || 'No number'}
                 </span>
               </div>
               <div className="text-sm">
-                {serviceEntry.vehicle.customer.name} • {serviceEntry.vehicle.customer.phone}
+                {serviceEntry.vehicle.customer && serviceEntry.vehicle.customer.name ? 
+                  `${serviceEntry.vehicle.customer.name} • ${serviceEntry.vehicle.customer.phone || ''}` : 
+                  'Customer information not available'}
               </div>
             </div>
           )}
@@ -235,7 +240,7 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
                   className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg p-1 z-10 hidden"
                 >
                   <div className="max-h-64 overflow-y-auto">
-                    {products?.map((product: Product) => (
+                    {Array.isArray(products) && products.map((product: Product) => (
                       <button
                         key={product.id}
                         type="button"

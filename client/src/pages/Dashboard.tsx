@@ -21,10 +21,47 @@ export default function Dashboard() {
     queryKey: ["/api/dashboard/stats"],
   });
   
-  // Fetch recent vehicles/service entries
-  const { data: recentEntries, isLoading: isLoadingEntries } = useQuery({
+  // Fetch basic service entries
+  const { data: basicEntries, isLoading: isLoadingBasic } = useQuery({
     queryKey: ["/api/service-entries"],
   });
+  
+  // Fetch details for each service entry
+  const [serviceEntries, setServiceEntries] = useState<any[]>([]);
+  const [isLoadingEntries, setIsLoadingEntries] = useState(true);
+  
+  // Effect to fetch detailed information for each entry
+  useEffect(() => {
+    async function fetchDetailsForEntries() {
+      if (!basicEntries || !Array.isArray(basicEntries) || basicEntries.length === 0) {
+        setServiceEntries([]);
+        setIsLoadingEntries(false);
+        return;
+      }
+      
+      setIsLoadingEntries(true);
+      try {
+        const detailedEntries = await Promise.all(
+          basicEntries.map(async (entry) => {
+            const response = await fetch(`/api/service-entries/${entry.id}/details`);
+            if (response.ok) {
+              return await response.json();
+            }
+            return null;
+          })
+        );
+        
+        // Filter out any null entries (failed requests)
+        setServiceEntries(detailedEntries.filter(entry => entry !== null));
+      } catch (error) {
+        console.error("Error fetching entry details:", error);
+      } finally {
+        setIsLoadingEntries(false);
+      }
+    }
+    
+    fetchDetailsForEntries();
+  }, [basicEntries]);
   
   const handleUpdateStatus = (id: number, status: string) => {
     updateServiceStatus.mutate({ id, status });
@@ -131,8 +168,8 @@ export default function Dashboard() {
         <div className="bg-white rounded-lg overflow-hidden shadow-md">
           {isLoadingEntries ? (
             <div className="p-4 text-center">Loading recent vehicles...</div>
-          ) : recentEntries?.length ? (
-            recentEntries.slice(0, 3).map((entry: any) => (
+          ) : serviceEntries?.length ? (
+            serviceEntries.slice(0, 3).map((entry: any) => (
               <VehicleCard 
                 key={entry.id} 
                 entry={entry} 

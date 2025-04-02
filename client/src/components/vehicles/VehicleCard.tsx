@@ -11,7 +11,9 @@ interface VehicleCardProps {
 export default function VehicleCard({ entry, onUpdateStatus }: VehicleCardProps) {
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
   
-  const { vehicle, status, totalAmount, entryDate, items = [] } = entry;
+  // Default empty arrays and objects to prevent errors if properties are missing
+  const { vehicle, status, totalAmount, entryDate } = entry;
+  const items = entry.items || [];
   const statusStyle = getStatusColor(status);
   
   // Default to 'bike' if type is undefined
