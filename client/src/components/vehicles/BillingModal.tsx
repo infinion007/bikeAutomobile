@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { formatCurrency, calculateTotals } from "@/lib/utils";
-import { Product, ServiceItemForm, BillingForm } from "@shared/schema";
+import { Product, ServiceItemForm, BillingForm, ServiceEntryWithDetails } from "@shared/schema";
 
 interface BillingModalProps {
   isOpen: boolean;
@@ -20,7 +20,7 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
   const [totals, setTotals] = useState({ subtotal: 0, taxRate: 0.18, taxAmount: 0, totalAmount: 0 });
   
   // Fetch service entry details
-  const { data: serviceEntry, isLoading: isLoadingServiceEntry } = useQuery({
+  const { data: serviceEntry, isLoading: isLoadingServiceEntry } = useQuery<ServiceEntryWithDetails>({
     queryKey: [`/api/service-entries/${serviceEntryId}/details`],
     enabled: isOpen && !!serviceEntryId,
   });
@@ -117,18 +117,34 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
   });
   
   // Handle saving items without completing
-  const saveItemsMutation = useMutation({
+  const saveItemsMutation = useMutation<ServiceEntryWithDetails, Error, BillingForm>({
     mutationFn: async (data: BillingForm) => {
       const response = await apiRequest("POST", "/api/billing", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Success",
         description: "Items saved successfully",
       });
+      // Invalidate both the service entries list and the specific service entry details
       queryClient.invalidateQueries({ queryKey: ["/api/service-entries"] });
-      onClose();
+      queryClient.invalidateQueries({ queryKey: [`/api/service-entries/${serviceEntryId}/details`] });
+      
+      // Update the local items state with the saved items to ensure UI consistency
+      if (data && data.items && Array.isArray(data.items)) {
+        const updatedItems = data.items.map(item => ({
+          id: item.id,
+          productId: item.product.id,
+          productName: item.product.name,
+          quantity: item.quantity,
+          price: item.price,
+          notes: item.notes || '',
+        }));
+        setItems(updatedItems);
+      }
+      
+      // Don't close the modal so the user can see their changes or continue editing
     },
     onError: (error) => {
       toast({

@@ -454,8 +454,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return the updated service entry with details
       const updatedEntryWithDetails = await storage.getServiceEntryWithDetails(billingData.serviceEntryId);
       
+      // Log the response for debugging
+      console.log(`Returning updated service entry details:`, 
+        JSON.stringify({
+          id: updatedEntryWithDetails?.id,
+          itemsCount: updatedEntryWithDetails?.items?.length || 0
+        })
+      );
+      
       res.json(updatedEntryWithDetails);
     } catch (err) {
+      console.error("Error in billing endpoint:", err);
       handleZodError(err, res);
     }
   });

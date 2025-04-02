@@ -389,9 +389,12 @@ export class MemStorage implements IStorage {
           ...item,
           product
         });
+      } else {
+        console.error(`Product not found for productId ${item.productId} in service item ${item.id}`);
       }
     }
     
+    console.log(`Retrieved ${result.length} service items with product details for service entry ${serviceEntryId}`);
     return result;
   }
 
