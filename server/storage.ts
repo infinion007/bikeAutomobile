@@ -474,6 +474,8 @@ export class MemStorage implements IStorage {
     const updatedPreOrder = { 
       ...preOrder, 
       status: 'refunded',
+      // Set refunded date to current date
+      refundedDate: new Date(),
       // Remove expectedDeliveryDate once refunded
       expectedDeliveryDate: null
     };

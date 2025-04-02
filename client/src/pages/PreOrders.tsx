@@ -32,6 +32,7 @@ interface PreOrder {
   contactNumber: string;
   expectedDeliveryDate: string | null;
   deliveredDate: string | null;
+  refundedDate: string | null;
   status: 'pending' | 'delivered' | 'cancelled' | 'refunded';
   notes: string;
   createdAt: string;
@@ -272,6 +273,11 @@ export default function PreOrders() {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Delivered Date:</span>
                       <span>{new Date(order.deliveredDate).toLocaleDateString()}</span>
+                    </div>
+                  ) : order.refundedDate ? (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Refunded Date:</span>
+                      <span>{new Date(order.refundedDate).toLocaleDateString()}</span>
                     </div>
                   ) : order.expectedDeliveryDate && (
                     <div className="flex justify-between">

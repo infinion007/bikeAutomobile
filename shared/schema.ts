@@ -132,6 +132,7 @@ export const preOrders = pgTable("pre_orders", {
   contactNumber: text("contact_number").notNull(),
   expectedDeliveryDate: timestamp("expected_delivery_date"),
   deliveredDate: timestamp("delivered_date"),
+  refundedDate: timestamp("refunded_date"),
   status: text("status").notNull().default("pending"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
