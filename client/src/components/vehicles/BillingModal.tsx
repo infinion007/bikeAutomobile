@@ -27,7 +27,32 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
   
   const [items, setItems] = useState<ServiceItemForm[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "upi" | "card" | "split">("cash");
-  const [totals, setTotals] = useState({ subtotal: 0, taxRate: 0.18, taxAmount: 0, totalAmount: 0, discount: 0 });
+  // Initialize GST based on settings
+  const [settings, setSettings] = useState(() => {
+    // Get shop settings from localStorage
+    const savedSettings = localStorage.getItem('shopSettings');
+    if (savedSettings) {
+      try {
+        return JSON.parse(savedSettings);
+      } catch (error) {
+        console.error('Failed to parse saved settings:', error);
+        return { taxRate: "18" }; // Default
+      }
+    }
+    return { taxRate: "18" }; // Default if no settings found
+  });
+
+  const [gstEnabled, setGstEnabled] = useState(() => {
+    return parseFloat(settings.taxRate) > 0;
+  });
+  
+  const [totals, setTotals] = useState({ 
+    subtotal: 0, 
+    taxRate: gstEnabled ? parseFloat(settings.taxRate) / 100 : 0, 
+    taxAmount: 0, 
+    totalAmount: 0, 
+    discount: 0 
+  });
   const [splitPayments, setSplitPayments] = useState({
     cash: 0,
     upi: 0,
@@ -64,8 +89,16 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
   
   // Update totals when items change
   useEffect(() => {
-    setTotals(calculateTotals(items, totals.discount));
-  }, [items]);
+    const taxRate = gstEnabled ? parseFloat(settings.taxRate) / 100 : 0;
+    const calculatedTotals = calculateTotals(items, totals.discount, taxRate);
+    // Apply GST based on the toggle setting
+    if (!gstEnabled) {
+      calculatedTotals.taxRate = 0;
+      calculatedTotals.taxAmount = 0;
+      calculatedTotals.totalAmount = calculatedTotals.subtotal;
+    }
+    setTotals(calculatedTotals);
+  }, [items, gstEnabled, settings.taxRate]);
   
   // Handle adding a custom item to the bill
   const handleAddItem = () => {
@@ -394,7 +427,35 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
               <span className="font-medium">{formatCurrency(totals.subtotal)}</span>
             </div>
             <div className="flex justify-between mb-2">
-              <span className="text-neutral-600">GST (18%)</span>
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  id="gstToggle" 
+                  checked={gstEnabled} 
+                  onChange={(e) => {
+                    setGstEnabled(e.target.checked);
+                    // Recalculate totals with or without tax
+                    if (e.target.checked) {
+                      const taxRate = parseFloat(settings.taxRate) / 100;
+                      setTotals(prev => ({
+                        ...prev,
+                        taxRate: taxRate,
+                        taxAmount: prev.subtotal * taxRate,
+                        totalAmount: prev.subtotal + (prev.subtotal * taxRate)
+                      }));
+                    } else {
+                      setTotals(prev => ({
+                        ...prev,
+                        taxRate: 0,
+                        taxAmount: 0,
+                        totalAmount: prev.subtotal
+                      }));
+                    }
+                  }}
+                  className="mr-2"
+                />
+                <label htmlFor="gstToggle" className="text-neutral-600">GST ({settings.taxRate}%)</label>
+              </div>
               <span className="font-medium">{formatCurrency(totals.taxAmount)}</span>
             </div>
             <div className="flex justify-between mb-2">

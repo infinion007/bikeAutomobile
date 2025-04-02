@@ -66,10 +66,7 @@ export function getTimeSince(date: Date | string): string {
   return `${days} day${days !== 1 ? "s" : ""} ago`;
 }
 
-export function calculateTotals(items: { price: number; quantity: number }[], discount: number = 0) {
-  // GST rate (18%)
-  const gstRate = 0.18;
-  
+export function calculateTotals(items: { price: number; quantity: number }[], discount: number = 0, gstRate: number = 0.18) {
   // Calculate subtotal
   const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
   

@@ -4,6 +4,11 @@ import VehicleCard from "@/components/vehicles/VehicleCard";
 import { useVehicleEntry } from "@/hooks/use-vehicle-entry";
 
 export default function ActiveVehicles() {
+  // Reference to handle navigation
+  const openNewVehicleModal = () => {
+    // Dispatch a custom event that will be caught by App.tsx
+    window.dispatchEvent(new CustomEvent('openVehicleModal'));
+  };
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("in_progress");
   const { updateServiceStatus } = useVehicleEntry();
@@ -80,7 +85,16 @@ export default function ActiveVehicles() {
   
   return (
     <section className="py-4">
-      <h2 className="text-xl font-bold mb-4">Active Vehicles</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Active Vehicles</h2>
+        <button 
+          onClick={openNewVehicleModal}
+          className="bg-primary text-white px-4 py-2 rounded-md flex items-center gap-1 hover:bg-primary/90 transition-colors"
+        >
+          <span className="material-icons text-xl">add</span>
+          Add
+        </button>
+      </div>
       
       <div className="mb-4 flex flex-col md:flex-row md:items-center gap-3">
         <div className="relative flex-grow">

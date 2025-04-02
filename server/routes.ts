@@ -445,10 +445,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           await storage.createServiceItem({
             serviceEntryId: billingData.serviceEntryId,
-            productId: itemData.productId,
-            quantity: itemData.quantity,
+            productName: itemData.productName,
+            quantity: itemData.quantity || 1,
             price: itemData.price,
-            notes: itemData.notes,
+            notes: itemData.notes || null,
           });
         }
       }

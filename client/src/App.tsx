@@ -9,7 +9,7 @@ import PreOrders from "./pages/PreOrders";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/not-found";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NewVehicleEntryModal from "./components/vehicles/NewVehicleEntryModal";
 
 function App() {
@@ -17,6 +17,19 @@ function App() {
 
   const openNewVehicleModal = () => setNewVehicleModalOpen(true);
   const closeNewVehicleModal = () => setNewVehicleModalOpen(false);
+  
+  // Listen for the custom event to open the vehicle modal
+  useEffect(() => {
+    const handleOpenVehicleModal = () => {
+      setNewVehicleModalOpen(true);
+    };
+    
+    window.addEventListener('openVehicleModal', handleOpenVehicleModal);
+    
+    return () => {
+      window.removeEventListener('openVehicleModal', handleOpenVehicleModal);
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
