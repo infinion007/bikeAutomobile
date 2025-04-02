@@ -154,7 +154,7 @@ export const vehicleEntryFormSchema = z.object({
   make: bikeMakeEnum,
   model: z.string().optional(),
   customerName: z.string().min(1, "Customer name is required"),
-  customerPhone: z.string().min(10, "Valid phone number is required"),
+  customerPhone: z.string().optional().or(z.literal("")),
   customerEmail: z.string().email().optional().or(z.literal("")),
   status: serviceStatusEnum.default("waiting"),
 });

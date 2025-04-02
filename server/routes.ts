@@ -18,9 +18,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   function handleZodError(err: unknown, res: Response) {
     if (err instanceof ZodError) {
       const validationError = fromZodError(err);
-      return res.status(400).json({ message: validationError.message });
+      console.log("Validation error:", validationError);
+      console.log("Detailed validation errors:", err.errors);
+      return res.status(400).json({ 
+        message: validationError.message,
+        details: err.errors 
+      });
     }
-    console.error(err);
+    console.error("Non-validation error:", err);
     return res.status(500).json({ message: "Internal server error" });
   }
 
@@ -191,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/service-entries", async (req, res) => {
+  app.post("/api/service-entries/direct", async (req, res) => {
     try {
       const entryData = insertServiceEntrySchema.parse(req.body);
       const entry = await storage.createServiceEntry(entryData);
@@ -309,16 +314,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // New Vehicle Entry (combined endpoint)
   app.post("/api/vehicle-entries", async (req, res) => {
     try {
+      console.log("Received vehicle entry request:", req.body);
+      
       // Parse and validate the form data
       const formData = vehicleEntryFormSchema.parse(req.body);
       
-      // 1. Check if customer exists by phone, or create a new one
-      let customer = await storage.getCustomerByPhone(formData.customerPhone);
+      // 1. Create a new customer (or use a generic one if no phone provided)
+      let customer;
+      
+      if (formData.customerPhone && formData.customerPhone.trim() !== "") {
+        // Check if customer exists by phone
+        customer = await storage.getCustomerByPhone(formData.customerPhone);
+      }
       
       if (!customer) {
+        // Create a new customer with provided info
         customer = await storage.createCustomer({
           name: formData.customerName,
-          phone: formData.customerPhone,
+          phone: formData.customerPhone || "not provided",
           email: formData.customerEmail || undefined,
         });
       }
@@ -357,6 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(entryWithDetails);
     } catch (err) {
+      console.error("Error creating vehicle entry:", err);
       handleZodError(err, res);
     }
   });

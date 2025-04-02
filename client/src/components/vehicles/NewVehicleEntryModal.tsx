@@ -100,7 +100,9 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
         <form onSubmit={handleSubmit(onSubmit)} className="p-4">
           {/* Vehicle Make dropdown */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Bike Make</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Bike Make <span className="text-red-500">*</span>
+            </label>
             <select
               {...register("make")}
               className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -118,7 +120,9 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
           
           {/* Model input */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Bike Model</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Bike Model
+            </label>
             <input 
               type="text" 
               {...register("model")}
@@ -135,6 +139,9 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
             <label className="block text-sm font-medium text-neutral-700 mb-1">Customer Information</label>
             <div className="flex space-x-2">
               <div className="flex-grow">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
                 <input 
                   type="text" 
                   {...register("customerName")}
@@ -146,6 +153,9 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
                 )}
               </div>
               <div className="flex-grow">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Phone
+                </label>
                 <input 
                   type="tel" 
                   {...register("customerPhone")}
@@ -161,7 +171,9 @@ export default function NewVehicleEntryModal({ isOpen, onClose }: NewVehicleEntr
           
           {/* Email field */}
           <div className="mt-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Email (Optional)</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Email (Optional)
+            </label>
             <input 
               type="email" 
               {...register("customerEmail")}
