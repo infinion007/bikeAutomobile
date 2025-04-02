@@ -245,7 +245,7 @@ export default function BillingModal({ isOpen, onClose, serviceEntryId }: Billin
               <div className="relative">
                 <button 
                   type="button" 
-                  className="text-primary text-sm"
+                  className="text-blue-600 font-medium text-sm hover:text-blue-800"
                   onClick={() => document.getElementById('productDropdown')?.classList.toggle('hidden')}
                 >
                   + Add Item
